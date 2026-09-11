@@ -1,0 +1,80 @@
+{
+  "name": "code-over-ssh",
+  "displayName": "Code Over SSH (code_over_ssh)",
+  "description": "Open files in your local VS Code from a client running on the SSH remote host — for example straight from a VNC session.",
+  "version": "1.0.0",
+  "publisher": "Exciton00",
+  "author": {
+    "name": "Exciton00"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Exciton00/code_over_ssh.git"
+  },
+  "homepage": "https://github.com/Exciton00/code_over_ssh#readme",
+  "bugs": {
+    "url": "https://github.com/Exciton00/code_over_ssh/issues"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "ssh",
+    "remote",
+    "vnc",
+    "open file",
+    "unix socket"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "code_over_ssh.showOutput",
+        "title": "Code Over SSH: Show Log"
+      },
+      {
+        "command": "code_over_ssh.openPath",
+        "title": "Code Over SSH: Open Path (test)"
+      }
+    ],
+    "configuration": {
+      "title": "Code Over SSH",
+      "properties": {
+        "code_over_ssh.restrictToWorkspace": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Only allow opening files that live inside the current workspace folders (paths are resolved through symlinks). When `false`, any existing regular file readable by the user may be opened."
+        },
+        "code_over_ssh.notifyOnOpen": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show an information message when a file is opened via the `cosh` client."
+        },
+        "code_over_ssh.stateDir": {
+          "type": "string",
+          "default": "",
+          "description": "Override the state directory (sockets, token, host registry). Defaults to $HOME/.code_over_ssh on the machine where this extension host runs."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.4.0"
+  }
+}

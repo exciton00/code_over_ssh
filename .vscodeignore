@@ -1,0 +1,11 @@
+# 开发相关文件,运行时不需要(源码见 GitHub 仓库)
+src/**
+**/*.map
+.gitignore
+tsconfig.json
+package-lock.json
+.vscodeignore
+
+# 平台相关的编译产物:请从 GitHub Release 获取
+client/cosh
+client/*.o

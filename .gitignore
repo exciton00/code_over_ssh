@@ -1,0 +1,11 @@
+# 构建产物
+node_modules/
+out/
+*.vsix
+
+# C 客户端二进制
+client/cosh
+client/*.o
+
+# 本地状态（不应被提交）
+.code_over_ssh/
