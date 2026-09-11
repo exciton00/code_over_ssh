@@ -295,6 +295,14 @@ export async function startCoshServer(opts: CoshServerOptions): Promise<CoshServ
         socket.end();
         return;
       }
+      if (!path.isAbsolute(filePath)) {
+        // A relative path here would be resolved against this process' cwd,
+        // which is never what the user meant; clients must resolve it first.
+        reply('ERR relative path not supported (clients must send an absolute path)');
+        log(`rejected relative path: ${filePath}`);
+        socket.end();
+        return;
+      }
       touch();
       try {
         const result = await opts.onOpen(filePath);

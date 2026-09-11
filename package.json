@@ -2,7 +2,7 @@
   "name": "code-over-ssh",
   "displayName": "Code Over SSH (code_over_ssh)",
   "description": "Open files in your local VS Code from a client running on the SSH remote host — for example straight from a VNC session.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "Exciton00",
   "author": {
     "name": "Exciton00"

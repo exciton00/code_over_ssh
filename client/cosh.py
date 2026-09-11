@@ -125,7 +125,11 @@ def main():
 
     if not args.path:
         ap.error("path is required")
-    if len(args.path) > PATH_LIMIT:
+
+    # Only the client knows the shell's working directory: the extension host
+    # would resolve a relative path against its own cwd (usually $HOME).
+    file_path = os.path.abspath(args.path)
+    if len(file_path) > PATH_LIMIT:
         print("cosh: path too long", file=sys.stderr)
         return 2
 
@@ -142,7 +146,7 @@ def main():
     for host in hosts:
         if args.host and host.get("hostId") != args.host:
             continue
-        r = try_host(host, token, args.path, max(1, args.timeout))
+        r = try_host(host, token, file_path, max(1, args.timeout))
         if r == 1:
             succeeded += 1
             if not args.all:

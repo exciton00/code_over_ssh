@@ -10,6 +10,7 @@
  *
  * Usage:
  *   cosh <path>              open in the freshest (most recently active) window
+ *                            (relative paths are resolved against $PWD)
  *   cosh --all <path>        open in every registered window
  *   cosh --host <hostid> ... target one specific host
  *   cosh --list              list registered hosts and exit
@@ -226,6 +227,63 @@ static int send_all(int fd, const char *hostid, const char *buf)
     return 1;
 }
 
+/* Lexically normalize an absolute path: collapse "//" and "/./", resolve
+ * "/../" textually (like os.path.normpath). Symlinks are left to the server,
+ * which runs realpath() on the final path. */
+static void normalize_path(const char *in, char *out, size_t outsz)
+{
+    size_t o = 0;
+    const char *p = in;
+    if (*p != '/' || outsz < 2) {
+        if (outsz) out[0] = '\0';
+        return;
+    }
+    out[o++] = '/';
+    p++;
+    while (*p) {
+        const char *seg = p;
+        size_t len = 0;
+        while (seg[len] && seg[len] != '/') len++;
+        p = seg + len;
+        while (*p == '/') p++;
+        if (len == 0) continue;
+        if (len == 1 && seg[0] == '.') continue;
+        if (len == 2 && seg[0] == '.' && seg[1] == '.') {
+            while (o > 1 && out[o - 1] != '/') o--;
+            if (o > 1) o--;             /* drop the preceding '/' too */
+            continue;
+        }
+        if (o > 1) {
+            if (o + 1 >= outsz) break;
+            out[o++] = '/';
+        }
+        if (o + len >= outsz) break;
+        memcpy(out + o, seg, len);
+        o += len;
+    }
+    out[o] = '\0';
+}
+
+/* Turn `in` into an absolute, normalized path. Only the client knows the
+ * shell's working directory — the extension host would resolve a relative
+ * path against its own cwd (usually $HOME), which is not what the user
+ * meant. */
+static int make_absolute(const char *in, char *out, size_t outsz)
+{
+    char raw[BIG];
+    int n;
+    if (in[0] == '/') {
+        n = snprintf(raw, sizeof raw, "%s", in);
+    } else {
+        char cwd[BIG];
+        if (getcwd(cwd, sizeof cwd) == NULL) return 0;
+        n = snprintf(raw, sizeof raw, "%s/%s", cwd, in);
+    }
+    if (n < 0 || (size_t)n >= sizeof raw) return 0;
+    normalize_path(raw, out, outsz);
+    return out[0] == '/';
+}
+
 /*
  * Try to open `path` on one host.
  * Returns:  1 success
@@ -266,6 +324,7 @@ static int try_host(const Host *h, const char *token, const char *path,
     }
 
     char line[65536];
+    line[0] = '\0'; /* never print uninitialized memory if a read fails */
 
     char hello[TOKEN_LIMIT + 32];
     snprintf(hello, sizeof hello, "COSH/1 %s\n", token);
@@ -389,6 +448,14 @@ int main(int argc, char **argv)
         fprintf(stderr, "usage: cosh [--list] [--all] [--host HOSTID] <path>\n");
         return 2;
     }
+
+    /* Resolve relative paths against *our* cwd before talking to the host. */
+    static char abs_path[BIG];
+    if (!make_absolute(path, abs_path, sizeof abs_path)) {
+        fprintf(stderr, "cosh: cannot resolve %s (cwd unavailable or path too long)\n", path);
+        return 2;
+    }
+    path = abs_path;
     if (strlen(path) > PATH_LIMIT) die("path too long", 2);
 
     if (n == 0) {
